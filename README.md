@@ -1,2 +1,2 @@
-# file_timestamper
+# File Timestamper
 Small toolset for handling filenames with timestamps, specifically the kind saved by Evisions Argos reporting software. 
