@@ -102,16 +102,17 @@ def out_of_date(reference, target):
 
     Parameters
     ----------
-    reference : time.struct_time or datetime.datetime
+    reference : time.struct_time, datetime.datetime, str, or pathlib.Path
         Time associated with reference
-    target : time.struct_time or datetime.datetime
+    target : time.struct_time, datetime.datetime, str, or pathlib.Path
         Time associated with target
 
     Returns
     -------
     outdated : bool or None
-        Indicates if target is nonexistent or not as recent. None
-        if reference and target are None.
+        True if target is None or older than reference. False if target is
+        at least as new as reference or reference is None. None if reference 
+        and target are both None.
     """
 
     if isinstance(reference, str) or isinstance(reference, pathlib.Path):
