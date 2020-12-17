@@ -4,10 +4,14 @@ import pathlib
 import datetime
 import dateutil.parser
 
+DEFAULT_STAMP_REGEX = r"(_)?\d{8}_\d{6}"
+DEFAULT_STAMP_FMT = r"%Y%m%d_%H%M%S"
+DEFAULT_FILE_EXT = "*"
+
 
 def parse_argos(string):
     """Parse timestamp from string
-    
+
     For simplicity, assumes timestamps are as recent as the year 2000
 
     Parameters
@@ -58,7 +62,7 @@ def parse_argos(string):
     return ctime
 
 
-def format(ctime, fmt=r"%Y%m%d_%H%M%S"):
+def format(ctime, fmt=DEFAULT_STAMP_FMT):
     """Format time into file timestamp
 
     Parameters
@@ -82,7 +86,7 @@ def format(ctime, fmt=r"%Y%m%d_%H%M%S"):
 
 def parse(filename):
     """Parse timestamp from filename
-    
+
     Parameters
     ----------
     filename : str, pathlib.Path
@@ -111,7 +115,7 @@ def out_of_date(reference, target):
     -------
     outdated : bool or None
         True if target is None or older than reference. False if target is
-        at least as new as reference or reference is None. None if reference 
+        at least as new as reference or reference is None. None if reference
         and target are both None.
     """
 
@@ -148,7 +152,9 @@ def out_of_date(reference, target):
     return outdated
 
 
-def filepaths(directory, file_stem, stamp_fmt=r"\d{8}_\d{6}"):
+def filepaths(
+    directory, file_stem, file_ext=DEFAULT_FILE_EXT, stamp_regex=DEFAULT_STAMP_REGEX
+):
     """Generate all filenames with matching stem
 
     Parameters
@@ -157,20 +163,24 @@ def filepaths(directory, file_stem, stamp_fmt=r"\d{8}_\d{6}"):
         Path to directory holding file
     file_stem : str
         Filename without timestamp and extension
-    stamp_fmt : str
-        Regular expression
+    stamp_regex : str
+        Regular expression to concatenate to file_stem to not grab
+        files that share a partial filename (i.e. distinquish
+        'credits<stamp>.csv' from 'credits_for_class<stamp>.csv).
 
     Returns
     ------
     list of pathlib.Path
         Path of file in directory matching stem
     """
-    stamp = re.compile(stamp_fmt)
+    stamp = re.compile(file_stem + stamp_regex + file_ext)
     paths = [p for p in directory.glob(f"{file_stem}*") if stamp.search(p.name)]
     return paths
 
 
-def filenames(directory, file_stem, stamp_fmt=r"\d{8}_\d{6}"):
+def filenames(
+    directory, file_stem, file_ext=DEFAULT_FILE_EXT, stamp_regex=DEFAULT_STAMP_REGEX
+):
     """Generate all filenames with matching stem
 
     Parameters
@@ -185,10 +195,17 @@ def filenames(directory, file_stem, stamp_fmt=r"\d{8}_\d{6}"):
     str
         Name of file in directory matching stem
     """
-    return (x.name for x in filepaths(directory, file_stem, stamp_fmt=stamp_fmt))
+    return (
+        x.name
+        for x in filepaths(
+            directory, file_stem, file_ext=file_ext, stamp_regex=stamp_regex
+        )
+    )
 
 
-def latest_version(directory, file_stem, stamp_fmt=r"\d{8}_\d{6}"):
+def latest_version(
+    directory, file_stem, file_ext=DEFAULT_FILE_EXT, stamp_regex=DEFAULT_STAMP_REGEX
+):
     """Gets latest creation time of files sharing stem
 
     Parameters
@@ -197,6 +214,10 @@ def latest_version(directory, file_stem, stamp_fmt=r"\d{8}_\d{6}"):
         Path to directory holding file
     file_stem : str
         File stem, filename without timestamp and extension
+    file_ext : str
+        File extension to use to retreive only files of interest
+    stamp_regex : str
+        Regular expression to filter only files with timestamps 
 
     Returns
     -------
@@ -205,7 +226,8 @@ def latest_version(directory, file_stem, stamp_fmt=r"\d{8}_\d{6}"):
     """
     sort_by = lambda s: dateutil.parser.parse(s, fuzzy=True)
     sorted_fnames = sorted(
-        filenames(directory, file_stem, stamp_fmt=stamp_fmt), key=sort_by
+        filenames(directory, file_stem, file_ext=file_ext, stamp_regex=stamp_regex),
+        key=sort_by,
     )
     if sorted_fnames:
         return sorted_fnames[-1]
