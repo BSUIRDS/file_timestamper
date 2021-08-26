@@ -84,7 +84,7 @@ def format(ctime, fmt=DEFAULT_STAMP_FMT):
         return time.strftime(fmt, ctime)
 
 
-def parse(filename):
+def parse(filename, file_stem=""):
     """Parse timestamp from filename
 
     Parameters
@@ -93,15 +93,15 @@ def parse(filename):
         Path or string of file
     """
     if isinstance(filename, str):
-        t = dateutil.parser.parse(filename, fuzzy=True)
+        t = dateutil.parser.parse(re.sub(file_stem, "", filename), fuzzy=True)
     elif isinstance(filename, pathlib.Path):
-        t = dateutil.parser.parse(filename.name, fuzzy=True)
+        t = dateutil.parser.parse(re.sub(file_stem, "", filename.name), fuzzy=True)
     else:
         raise ValueError(f"Cannot parse: {filename}")
     return t
 
 
-def out_of_date(reference, target):
+def out_of_date(reference, target, file_stem=""):
     """Returns True if reference is newer than target
 
     Parameters
@@ -120,10 +120,10 @@ def out_of_date(reference, target):
     """
 
     if isinstance(reference, str) or isinstance(reference, pathlib.Path):
-        reference = parse(reference)
+        reference = parse(reference, file_stem=file_stem)
 
     if isinstance(target, str) or isinstance(target, pathlib.Path):
-        target = parse(target)
+        target = parse(target, file_stem=file_stem)
 
     assert (
         isinstance(reference, time.struct_time)
@@ -224,7 +224,7 @@ def latest_version(
     str
         Filename of file with most recent creation time
     """
-    sort_by = lambda s: dateutil.parser.parse(s, fuzzy=True)
+    sort_by = lambda s: dateutil.parser.parse(re.sub(file_stem, "", s), fuzzy=True)
     sorted_fnames = sorted(
         filenames(directory, file_stem, file_ext=file_ext, stamp_regex=stamp_regex),
         key=sort_by,
